@@ -100,14 +100,14 @@
     const map = new mapboxgl.Map({
       container: 'map', // Specify the container ID
       style: 'mapbox://styles/mapbox/streets-v12', // Specify which map style to use
-      center: [-87.721072, 41.980576], // NEIU main campus coordinates
+      center: [-87.720884, 41.980865], // NEIU main campus coordinates
       zoom: 14, // Adjust the zoom level as needed
     });
 
     // Define constants to be used in the getIso() function
     const urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/'; // The base URL of the Isochrone API
-    const lon = -87.721072; // The longitude of the NEIU main campus
-    const lat = 41.980576; // The latitude of the NEIU main campus
+    const lon = -87.720884; // The longitude of the NEIU main campus
+    const lat = 41.980865; // The latitude of the NEIU main campus
     let profile = 'cycling'; // Set the default routing profile (e.g., cycling)
     let minutes = 15; // Set the default duration in minutes
 
