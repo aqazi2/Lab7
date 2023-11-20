@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang='en'>
+
+<head>
+  <meta charset='utf-8' />
+  <title>Isochrone Map around NEIU</title>
+  <meta name='viewport' content='width=device-width, initial-scale=1' />
+  <!-- Import Mapbox GL JS  -->
+  <script src='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.js'></script>
+  <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v2.14.1/mapbox-gl.css' rel='stylesheet' />
+  <!-- Import Assembly -->
+  <link href='https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.min.css' rel='stylesheet'>
+  <script src='https://api.mapbox.com/mapbox-assembly/v1.3.0/assembly.js'></script>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+    }
+
+    #map {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Create a container for the map -->
+  <div id='map'></div>
+
+  <div class='absolute fl my24 mx24 py24 px24 bg-gray-faint round'>
+    <form id='params'>
+      <!-- Create a heading for choosing the travel mode -->
+      <h4 class='txt-m txt-bold mb6'>Choose a travel mode:</h4>
+
+      <!-- Create a container for travel mode options -->
+      <div class='mb12 mr12 toggle-group align-center'>
+        <!-- Option 1: Walking -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "Walking" -->
+          <input name='profile' type='radio' value='walking'>
+          <!-- Label for "Walking" -->
+          <div class='toggle toggle--active-null toggle--null'>Walking</div>
+        </label>
+
+        <!-- Option 2: Cycling (pre-checked by default) -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "Cycling" (default) -->
+          <input name='profile' type='radio' value='cycling' checked>
+          <!-- Label for "Cycling" -->
+          <div class='toggle toggle--active-null toggle--null'>Cycling</div>
+        </label>
+
+        <!-- Option 3: Driving -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "Driving" -->
+          <input name='profile' type='radio' value='driving'>
+          <!-- Label for "Driving" -->
+          <div class='toggle toggle--active-null toggle--null'>Driving</div>
+        </label>
+      </div>
+
+      <!-- Create a heading for choosing maximum duration -->
+      <h4 class='txt-m txt-bold mb6'>Choose a maximum duration:</h4>
+
+      <!-- Create a container for duration options -->
+      <div class='mb12 mr12 toggle-group align-center'>
+        <!-- Option 1: 15 minutes (pre-checked by default) -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "15 minutes" (default) -->
+          <input name='duration' type='radio' value='15' checked>
+          <!-- Label for "15 minutes" -->
+          <div class='toggle toggle--active-null toggle--null'>15 min</div>
+        </label>
+
+        <!-- Option 2: 30 minutes -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "30 minutes" -->
+          <input name='duration' type='radio' value='30'>
+          <!-- Label for "30 minutes" -->
+          <div class='toggle toggle--active-null toggle--null'>30 min</div>
+        </label>
+
+        <!-- Option 3: 45 minutes -->
+        <label class='toggle-container'>
+          <!-- Radio button for selecting "45 minutes" -->
+          <input name='duration' type='radio' value='45'>
+          <!-- Label for "45 minutes" -->
+          <div class='toggle toggle--active-null toggle--null'>45 min</div>
+        </label>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // Add your Mapbox access token
+    mapboxgl.accessToken = "pk.eyJ1IjoiYXFhemkiLCJhIjoiY2xvaHc4dWkzMGZqajJrcHF5MDlxY2FnNCJ9.w2rhdjTBwODsGV8thEVZmw";
+    const map = new mapboxgl.Map({
+      container: 'map', // Specify the container ID
+      style: 'mapbox://styles/mapbox/streets-v12', // Specify which map style to use
+      center: [-87.721072, 41.980576], // NEIU main campus coordinates
+      zoom: 14, // Adjust the zoom level as needed
+    });
+
+    // Define constants to be used in the getIso() function
+    const urlBase = 'https://api.mapbox.com/isochrone/v1/mapbox/'; // The base URL of the Isochrone API
+    const lon = -87.721072; // The longitude of the NEIU main campus
+    const lat = 41.980576; // The latitude of the NEIU main campus
+    let profile = 'cycling'; // Set the default routing profile (e.g., cycling)
+    let minutes = 15; // Set the default duration in minutes
+
+    // Create a function for setting up the Isochrone API query and making a fetch call
+    async function getIso() {
+      // Construct the query URL
+      const query = await fetch(
+        `${urlBase}${profile}/${lon},${lat}?contours_minutes=${minutes}&polygons=true&access_token=${mapboxgl.accessToken}`,
+        { method: 'GET' }
+      );
+
+      // Retrieve and parse the response data
+      const data = await query.json();
+
+      // Log the data to the console for inspection
+      map.getSource('iso').setData(data);
+    }
+
+    // Call the getIso function (This is for testing purposes and can be removed later)
+    getIso();
+
+    map.on('load', () => {
+      // When the map loads, add the source and layer
+      map.addSource('iso', {
+        type: 'geojson',
+        data: {
+          type: 'FeatureCollection',
+          features: [] // Initially, the features array is empty
+        }
+      });
+
+      map.addLayer(
+        {
+          id: 'isoLayer',
+          type: 'fill',
+          source: 'iso', // Use the 'iso' source for this layer
+          layout: {},
+          paint: {
+            'fill-color': 'darkgreen', // The fill color for the layer
+            'fill-opacity': 0.3
+          }
+        },
+        'poi-label'
+      );
+
+      // Create a marker with the correct lngLat object
+      const marker = new mapboxgl.Marker({
+        color: '#314ccd'
+      }).setLngLat([lon, lat]).addTo(map);
+
+      // Make the API call
+      getIso();
+    });
+
+    // Target the "params" form in the HTML portion of your code
+    const params = document.getElementById('params');
+
+    // When a user changes the value of profile or duration by clicking a button, change the parameter's value and make the API query again
+    params.addEventListener('change', (event) => {
+      if (event.target.name === 'profile') {
+        profile = event.target.value;
+      } else if (event.target.name === 'duration') {
+        minutes = event.target.value;
+      }
+      getIso();
+    });
+  </script>
+</body>
+
+</html>
